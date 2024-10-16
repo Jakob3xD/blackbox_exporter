@@ -146,6 +146,7 @@ func (sc *SafeConfig) ReloadConfig(confFile string, logger log.Logger) (err erro
 }
 
 // Regexp encapsulates a regexp.Regexp and makes it YAML marshalable.
+// +kubebuilder:validation:Type=string
 type Regexp struct {
 	*regexp.Regexp
 	original string
