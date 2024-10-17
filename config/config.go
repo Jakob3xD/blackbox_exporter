@@ -147,10 +147,9 @@ func (sc *SafeConfig) ReloadConfig(confFile string, logger log.Logger) (err erro
 
 // Regexp encapsulates a regexp.Regexp and makes it YAML marshalable.
 // +kubebuilder:validation:Type=string
-// +kubebuilder:validation:Pattern=.+
 type Regexp struct {
-	*regexp.Regexp `json:""`
-	original       string
+	*regexp.Regexp
+	original string
 }
 
 // NewRegexp creates a new anchored Regexp and returns an error if the
@@ -177,10 +176,28 @@ func (re *Regexp) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (re *Regexp) UnmarshalJSON(data []byte) error {
+	r, err := NewRegexp(string(data))
+	if err != nil {
+		return fmt.Errorf("\"Could not compile regular expression\" regexp=\"%s\"", string(data))
+	}
+	*re = r
+	return nil
+}
+
 // MarshalYAML implements the yaml.Marshaler interface.
 func (re Regexp) MarshalYAML() (interface{}, error) {
 	if re.original != "" {
 		return re.original, nil
+	}
+	return nil, nil
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (re Regexp) MarshalJSOn() ([]byte, error) {
+	if re.original != "" {
+		return []byte(re.original), nil
 	}
 	return nil, nil
 }
