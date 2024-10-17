@@ -14,6 +14,7 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -148,7 +149,7 @@ func (sc *SafeConfig) ReloadConfig(confFile string, logger log.Logger) (err erro
 // Regexp encapsulates a regexp.Regexp and makes it YAML marshalable.
 // +kubebuilder:validation:Type=string
 type Regexp struct {
-	*regexp.Regexp `json:",inline"`
+	*regexp.Regexp `json:"-"`
 	original       string
 }
 
@@ -339,6 +340,20 @@ func (s *HTTPProbe) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
+	return s.setDefaults()
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (s *HTTPProbe) UnmarshalJSON(data []byte) error {
+	*s = DefaultHTTPProbe
+	if err := json.Unmarshal(data, s); err != nil {
+		return err
+	}
+
+	return s.setDefaults()
+}
+
+func (s *HTTPProbe) setDefaults() error {
 	// BodySizeLimit == 0 means no limit. By leaving it at 0 we
 	// avoid setting up the limiter.
 	if s.BodySizeLimit < 0 || s.BodySizeLimit == math.MaxInt64 {
@@ -369,7 +384,6 @@ func (s *HTTPProbe) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -390,6 +404,18 @@ func (s *DNSProbe) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal((*plain)(s)); err != nil {
 		return err
 	}
+	return s.verifyFields()
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (s *DNSProbe) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, s); err != nil {
+		return err
+	}
+	return s.verifyFields()
+}
+
+func (s *DNSProbe) verifyFields() error {
 	if s.QueryName == "" {
 		return errors.New("query name must be set for DNS module")
 	}
@@ -433,7 +459,18 @@ func (s *ICMPProbe) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal((*plain)(s)); err != nil {
 		return err
 	}
+	return s.verifyFields()
+}
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (s *ICMPProbe) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, s); err != nil {
+		return err
+	}
+	return s.verifyFields()
+}
+
+func (s *ICMPProbe) verifyFields() error {
 	if runtime.GOOS == "windows" && s.DontFragment {
 		return errors.New("\"dont_fragment\" is not supported on windows platforms")
 	}
@@ -463,7 +500,18 @@ func (s *HeaderMatch) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal((*plain)(s)); err != nil {
 		return err
 	}
+	return s.verifyFields()
+}
 
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (s *HeaderMatch) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, s); err != nil {
+		return err
+	}
+	return s.verifyFields()
+}
+
+func (s *HeaderMatch) verifyFields() error {
 	if s.Header == "" {
 		return errors.New("header name must be set for HTTP header matchers")
 	}
