@@ -149,8 +149,8 @@ func (sc *SafeConfig) ReloadConfig(confFile string, logger log.Logger) (err erro
 // +kubebuilder:validation:Type=string
 // +kubebuilder:validation:Pattern=.+
 type Regexp struct {
-	*regexp.Regexp
-	original string
+	*regexp.Regexp `json:""`
+	original       string
 }
 
 // NewRegexp creates a new anchored Regexp and returns an error if the
