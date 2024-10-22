@@ -25,6 +25,7 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -452,7 +453,7 @@ func (s *Module) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err := unmarshal((*plain)(s)); err != nil {
 		return err
 	}
-	return nil
+	return s.validate()
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
@@ -492,7 +493,7 @@ func (s *Module) UnmarshalJSON(data []byte) error {
 				return err
 			}
 		default:
-			return fmt.Errorf("invalid duration: %#v", tmp)
+			return fmt.Errorf("invalid duration '%#v'", tmp)
 		}
 	}
 	*s = Module{
@@ -503,6 +504,13 @@ func (s *Module) UnmarshalJSON(data []byte) error {
 		ICMP:    tmp.ICMP,
 		DNS:     tmp.DNS,
 		GRPC:    tmp.GRPC,
+	}
+	return s.validate()
+}
+
+func (s *Module) validate() error {
+	if !slices.Contains([]string{"http", "tcp", "icmp", "dns", "grpc"}, s.Prober) {
+		return fmt.Errorf("prober '%s' is invalid", s.Prober)
 	}
 	return nil
 }
